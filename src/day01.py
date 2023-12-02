@@ -2,9 +2,10 @@ from string import ascii_letters
 from pathlib import Path
 import re
 
-validation = (
-    Path(__file__).parent.with_name("input") / Path(__file__).with_suffix(".txt").name
-)
+file_name = Path(__file__).with_suffix(".txt").name
+dir_name = Path(__file__).parent.with_name("input")
+validation = (dir_name / file_name).read_text()
+
 example1 = """
 1abc2
 pqr3stu8vwx
@@ -25,7 +26,7 @@ zoneight234
 
 def part1(data):
     trans = str.maketrans(dict.fromkeys(ascii_letters, ""))
-    print(sum(int(c[0] + c[-1]) for c in data.translate(trans).strip().splitlines()))
+    return sum(int(c[0] + c[-1]) for c in data.translate(trans).strip().splitlines())
 
 
 def part2(data):
@@ -45,7 +46,7 @@ def part2(data):
 
 
 part1(example1)
-part1(validation.read_text())
+part1(validation)
 
 part2(example2)
-part2(validation.read_text())
+part2(validation)
