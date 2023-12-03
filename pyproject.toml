@@ -1,0 +1,20 @@
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = [
+    "A",
+    "B",
+    "E",
+    "F",
+    "FLY",
+    "NPY",
+    "PD",
+    "PERF",
+    "PL",
+    "RUF",
+    "S",
+    "UP",
+    "W",
+]

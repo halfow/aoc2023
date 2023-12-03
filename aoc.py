@@ -19,6 +19,8 @@ from pathlib import Path
 file_name = Path(__file__).with_suffix(".txt").name
 dir_name = Path(__file__).parent.with_name("input")
 validation = (dir_name / file_name).read_text()
+example = \"""
+\""".strip()
 """.lstrip()
 
 
@@ -34,9 +36,10 @@ def web(day):
     webbrowser.open(f"{site}/{year}/day/{day}")
 
 
-def submit(*, part, answer):
-    assert part in (1, 2), ValueError(f"Expected 1 or 2, got {part}")
-    print(aoc.post(f"{site}/answer", data={"level": part, "answer": answer}).text)
+def submit(day, part, answer):
+    if part not in (1, 2):
+        raise ValueError(f"Expected 1 or 2, got {part}")
+    print(aoc.post(f"{site}/{year}/day/{day}/answer", data={"level": part, "answer": answer}).text)
 
 
 if __name__ == "__main__":

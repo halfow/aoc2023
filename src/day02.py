@@ -1,5 +1,7 @@
 from pathlib import Path
-from typing import NamedTuple, Self, Generator, Iterable
+from typing import NamedTuple, Self, Iterable
+from collections import defaultdict
+import re
 
 file_name = Path(__file__).with_suffix(".txt").name
 dir_name = Path(__file__).parent.with_name("input")
@@ -20,49 +22,30 @@ class Cube(NamedTuple):
     blue: int = 0
 
     def __ge__(self, other: Self) -> bool:
-        return (
-            self.red >= other.red
-            and self.green >= other.green
-            and self.blue >= other.blue
-        )
+        return all(s >= o for s, o in zip(self, other, strict=True))
 
     @classmethod
-    def from_reveal(cls, reveal: str):
-        items = (cube.partition(" ") for cube in reveal.split(", "))
-        return cls(**{b: int(a) for a, _, b in items})
-
-    @classmethod
-    def max(cls, cubes: Iterable[Self]):
-        red, green, blue = 0, 0, 0
-        for obj in cubes:
-            red = max(red, obj.red)
-            green = max(green, obj.green)
-            blue = max(blue, obj.blue)
-        return cls(red=red, green=green, blue=blue)
+    def from_game(cls, line: str):
+        regex = re.compile(r"(\d+) (\w+)")
+        dictionary = defaultdict(int)
+        for n, color in regex.findall(line):
+            dictionary[color] = max(dictionary[color], int(n))
+        return cls(**dictionary)
 
 
-def parse_game(line: str) -> tuple[int, Cube]:
-    game, _, data = line.partition(": ")
-    _, _, game_no = game.partition(" ")
-    cubes = map(Cube.from_reveal, data.split("; "))
-    return int(game_no), Cube.max(cubes)
-
-
-def parse_games(text) -> Generator[tuple[int, Cube], None, None]:
-    yield from map(parse_game, text.splitlines())
-
-
-def part_1(games) -> int:
+def part_1(games: Iterable[Cube]) -> int:
     threshold = Cube(red=12, green=13, blue=14)
-    return sum(game for game, cube in games if threshold >= cube)
+    return sum(n for n, cube in enumerate(games, start=1) if threshold >= cube)
 
 
-def part_2(games) -> int:
-    return sum(cube.red * cube.green * cube.blue for _, cube in games)
+def part_2(games: Iterable[Cube]) -> int:
+    return sum(cube.red * cube.green * cube.blue for cube in games)
 
 
-example_games = list(parse_games(example))
-validation_games = list(parse_games(validation))
+example_games = tuple(map(Cube.from_game, example.splitlines()))
+validation_games = tuple(map(Cube.from_game, validation.splitlines()))
+
+print(*enumerate(example_games, start=1), sep="\n")
 
 print(f"{part_1(example_games)=}")
 print(f"{part_1(validation_games)=}")
