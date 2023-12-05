@@ -4,6 +4,7 @@ from http import HTTPStatus
 from os import environ
 from pathlib import Path
 from dotenv import load_dotenv
+from subprocess import run
 
 load_dotenv()
 
@@ -29,7 +30,9 @@ def get(day):
     root = Path(__file__)
     if response.status_code == HTTPStatus.OK:
         (root.with_name("input") / f"day{day:>02}.txt").write_text(response.text)
-        (root.with_name("src") / f"day{day:>02}.py").write_text(start)
+        src = root.with_name("src") / f"day{day:>02}.py"
+        src.write_text(start)
+        run(["code", str(src)])  # noqa: S603, PLW1510, S607
 
 
 def web(day):
