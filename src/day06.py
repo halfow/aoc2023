@@ -1,6 +1,6 @@
 from pathlib import Path
 import re
-from math import prod
+from math import prod, isqrt
 
 file_name = Path(__file__).with_suffix(".txt").name
 dir_name = Path(__file__).parent.with_name("input")
@@ -18,12 +18,18 @@ def parse(text):
     return zip(data[:mid], data[mid:])
 
 
-def part(text: str):
+def part1(text: str):
     for ms, mm in parse(text):
         yield sum((x * y) > mm for x, y in zip(range(1, ms), range(ms - 1, 0, -1)))
 
 
-print(f"Part 1: {prod(part(example)):>10}")
-print(f"Part 1: {prod(part(validation)):>10}")
-print(f"Part 2: {prod(part(example.replace(" ", ""))):>10}")
-print(f"Part 2: {prod(part(validation.replace(" ", ""))):>10}")
+def part2(text):
+    for time, distance in parse(text):
+        return isqrt(time**2 - 4 * distance)
+
+
+print(f"Part 1: {prod(part1(example)):>10}")
+print(f"Part 1: {prod(part1(validation)):>10}")
+
+print(f"Part 2: {part2(example.replace(" ", "")):>10}")
+print(f"Part 2: {part2(validation.replace(" ", "")):>10}")
