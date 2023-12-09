@@ -19,8 +19,8 @@ def parse(text):
 
 
 def part1(text: str):
-    for ms, mm in parse(text):
-        yield sum((x * y) > mm for x, y in zip(range(1, ms), range(ms - 1, 0, -1)))
+    for time, distance in parse(text):
+        yield sum((x * y) > distance for x, y in zip(range(1, time), range(time - 1, 0, -1)))
 
 
 def part2(text):
@@ -31,5 +31,5 @@ def part2(text):
 print(f"Part 1: {prod(part1(example)):>10}")
 print(f"Part 1: {prod(part1(validation)):>10}")
 
-print(f"Part 2: {part2(example.replace(" ", "")):>10}")
-print(f"Part 2: {part2(validation.replace(" ", "")):>10}")
+print(f"Part 2: {part2(example.replace(' ', '')):>10}")
+print(f"Part 2: {part2(validation.replace(' ', '')):>10}")

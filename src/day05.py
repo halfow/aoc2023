@@ -43,27 +43,30 @@ humidity-to-location map:
 """.strip()
 
 
-class Field(NamedTuple):
+class Range(NamedTuple):
     start: int
     stop: int
-    delta: int
+    delta: int = 0
+
+    def __contains__(self, value: int) -> bool:
+        return self.start <= value < self.stop
 
 
-def prutt(m):
+def page2ranges(m):
     digits = re.compile(r"\d+")
     for stop, start, step in batched(map(int, digits.findall(m)), 3):
-        yield Field(start, start + step, stop - start)
+        yield Range(start, start + step, stop - start)
 
 
-def party(text):
-    seeds, *raw_almanac = text.split("\n\n")
-    seeds = list(map(int, re.findall(r"\d+", seeds)))
+def parse_input(text):
+    __seeds, *__almanac = text.split("\n\n")
+    seeds = list(map(int, re.findall(r"\d+", __seeds)))
 
     almanac = {}
-    for maps in raw_almanac:
-        name, _, rest = maps.partition(":")
-        name = name.replace("-", " ").split(" ")[-2]
-        almanac[name] = sorted(prutt(rest))
+    for page in __almanac:
+        __name, _, rest = page.partition(":")
+        name = __name.replace("-", " ").split(" ")[-2]
+        almanac[name] = sorted(page2ranges(rest))
 
     return seeds, almanac
 
@@ -72,46 +75,42 @@ def part1(data):
     seeds, almanac = data
     for seed in seeds:
         tmp = seed
-        for instructions in almanac.values():
-            for lot in instructions:
-                if tmp in range(lot.start, lot.stop):
-                    tmp += lot.delta
+        for page in almanac.values():
+            for translation in page:
+                if tmp in translation:
+                    tmp += translation.delta
                     break
         yield tmp
 
 
 def part2(data):
-    raw_seeds, almanac = data
-    seeds = [range(start, start + n) for start, n in batched(raw_seeds, 2)]
-    for mapping in almanac.values():
+    __seeds, almanac = data
+    seeds = [Range(start, start + n) for start, n in batched(__seeds, 2)]
+    for page in almanac.values():
         tmp = []
         for current in seeds:
             remaining = current
-            for lot in mapping:
-                start = lot.start <= remaining.start < lot.stop
-                stop = lot.start <= remaining.stop < lot.stop
-
+            for p in page:
+                start, stop = remaining.start in p, remaining.stop in p
                 if start and stop:
-                    tmp.append(range(remaining.start + lot.delta, remaining.stop + lot.delta))
+                    tmp.append(Range(remaining.start + p.delta, remaining.stop + p.delta))
                     break
-
                 if start:
-                    tmp.append(range(remaining.start + lot.delta, lot.stop + lot.delta))
-                    remaining = range(lot.stop, remaining.stop)
-
+                    tmp.append(Range(remaining.start + p.delta, p.stop + p.delta))
+                    remaining = Range(p.stop, remaining.stop)
                 if stop:
-                    tmp.append(range(remaining.start, lot.start))
-                    tmp.append(range(lot.start + lot.delta, remaining.stop + lot.delta))
+                    tmp.append(Range(remaining.start, p.start))
+                    tmp.append(Range(p.start + p.delta, remaining.stop + p.delta))
             else:
                 tmp.append(remaining)
         seeds = tmp
     yield from seeds
 
 
-example_data = party(example)
-validation_data = party(validation)
+example_data = parse_input(example)
+validation_data = parse_input(validation)
 print(min(part1(example_data)))
 print(min(part1(validation_data)))
 
-print(min(part2(example_data), key=lambda x: x.start).start)
-print(min(part2(validation_data), key=lambda x: x.start).start)
+print(min(part2(example_data)).start)
+print(min(part2(validation_data)).start)
