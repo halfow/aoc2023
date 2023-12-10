@@ -1,5 +1,4 @@
 from pathlib import Path
-from itertools import chain
 from typing import NamedTuple, Generator, Sequence
 
 file_name = Path(__file__).with_suffix(".txt").name
@@ -65,42 +64,37 @@ class Position(NamedTuple):
     x: int
 
 
-step = {
-    "|": lambda c, t: (t, Position(2 * t.y - c.y, t.x)),
-    "-": lambda c, t: (t, Position(t.y, 2 * t.x - c.x)),
-    "L": lambda c, t: (t, Position(t.y - c.x + t.x, t.x - c.y + t.y)),
-    "J": lambda c, t: (t, Position(t.y + c.x - t.x, t.x + c.y - t.y)),
-    "7": lambda c, t: (t, Position(t.y - c.x + t.x, t.x - c.y + t.y)),
-    "F": lambda c, t: (t, Position(t.y + c.x - t.x, t.x + c.y - t.y)),
-}
-
-
 def parse(text: str) -> Generator[str, None, None]:
     yield from text.splitlines()
 
 
 def start_points(plane: Sequence[str]) -> Generator[tuple[Position, Position], None, None]:
     start = next(Position(y, line.find("S")) for y, line in enumerate(plane) if "S" in line)
-    points = (((0, 1), "-J7"), ((0, -1), "-FL"), ((-1, 0), "|F7"), ((1, 0), "|LJ"))
-    _candidates = ((Position(start.y + y, start.x + x), d) for (y, x), d in points)
-    x_max, y_max = len(plane[0]), len(plane)
-    candidates = ((c, d) for c, d in _candidates if (0 <= c.x <= x_max) and (0 <= c.y <= y_max))
-    yield from ((start, c) for c, d in candidates if plane[c.y][c.x] in d)
+    points = (
+        (Position(0, 1), "-J7"),  # Right
+        (Position(0, -1), "-FL"),  # Left
+        (Position(-1, 0), "|F7"),  # Up
+        (Position(1, 0), "|LJ"),  # Down
+    )
+    possible = ((Position(start.y + move.y, start.x + move.x), valid) for move, valid in points)
+    yield from ((start, move) for move, valid in possible if plane[move.y][move.x] in valid)
 
 
 def loop_positions(text) -> set[Position]:
     plane = tuple(parse(text))
-    data = list(start_points(plane))
-    seen = set(chain.from_iterable(data))
-    while data:
-        tmp = []
-        for c, t in data:
-            a, b = step[plane[t.y][t.x]](c, t)
-            if b not in seen:
-                tmp.append((a, b))
-                seen.add(b)
-        data = tmp
-    return seen
+    p, c = next(start_points(plane))
+    seen = {p, c}
+    while True:
+        match plane[c.y][c.x]:
+            case "|" | "-":
+                p, c = c, Position(2 * c.y - p.y, 2 * c.x - p.x)
+            case "L" | "7":
+                p, c = c, Position(c.y - p.x + c.x, c.x - p.y + c.y)
+            case "F" | "J":
+                p, c = c, Position(c.y + p.x - c.x, c.x + p.y - c.y)
+            case _:
+                return seen
+        seen.add(c)
 
 
 def part1(text: str) -> int:
