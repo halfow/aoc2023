@@ -1,6 +1,6 @@
 from pathlib import Path
 from itertools import chain
-from typing import NamedTuple
+from typing import NamedTuple, Generator, Sequence
 
 file_name = Path(__file__).with_suffix(".txt").name
 dir_name = Path(__file__).parent.with_name("input")
@@ -64,16 +64,7 @@ class Position(NamedTuple):
     y: int
     x: int
 
-    def __add__(self, other):
-        y, x = other
-        return self.__class__(self.y + y, self.x + x)
 
-    def __sub__(self, other):
-        y, x = other
-        return self.__class__(self.y - y, self.x - x)
-
-
-# 7 Position(y=2, x=3) Position(y=1, x=3) (Position(y=1, x=3), Position(y=1, x=4))
 step = {
     "|": lambda c, t: (t, Position(2 * t.y - c.y, t.x)),
     "-": lambda c, t: (t, Position(t.y, 2 * t.x - c.x)),
@@ -84,84 +75,57 @@ step = {
 }
 
 
-def parse(text: str):
+def parse(text: str) -> Generator[str, None, None]:
     yield from text.splitlines()
 
 
-def start_points(plane):
-    for y, line in enumerate(plane):
-        if "S" in line:
-            start = Position(y, line.find("S"))
-            break
-    else:
-        raise
-
-    points = (
-        ((0, 1), "-J7"),  # →
-        ((0, -1), "-FL"),  # ←
-        ((-1, 0), "|F7"),  # ↑
-        ((1, 0), "|LJ"),  # ↓
-    )
-    x_max = len(plane[0])
-    y_max = len(plane)
-    _candidates = ((start + p, d) for p, d in points)
+def start_points(plane: Sequence[str]) -> Generator[tuple[Position, Position], None, None]:
+    start = next(Position(y, line.find("S")) for y, line in enumerate(plane) if "S" in line)
+    points = (((0, 1), "-J7"), ((0, -1), "-FL"), ((-1, 0), "|F7"), ((1, 0), "|LJ"))
+    _candidates = ((Position(start.y + y, start.x + x), d) for (y, x), d in points)
+    x_max, y_max = len(plane[0]), len(plane)
     candidates = ((c, d) for c, d in _candidates if (0 <= c.x <= x_max) and (0 <= c.y <= y_max))
     yield from ((start, c) for c, d in candidates if plane[c.y][c.x] in d)
 
 
-def process(text):
+def loop_positions(text) -> set[Position]:
     plane = tuple(parse(text))
     data = list(start_points(plane))
     seen = set(chain.from_iterable(data))
     while data:
         tmp = []
         for c, t in data:
-            char = plane[t.y][t.x]
-            n = step[char](c, t)
-            if n[1] not in seen:
-                tmp.append(n)
-                seen.add(n[1])
+            a, b = step[plane[t.y][t.x]](c, t)
+            if b not in seen:
+                tmp.append((a, b))
+                seen.add(b)
         data = tmp
     return seen
 
 
-def part1(text):
-    return len(process(text)) // 2
+def part1(text: str) -> int:
+    return len(loop_positions(text)) // 2
 
 
-def part2(text):
-    seen = process(text)
-    plane = tuple(parse(text))
-    buff = None
-    counter = 0
-    for y, line in enumerate(plane):
+def part2(text: str) -> int:
+    to_maze = str.maketrans({"F": "┌", "7": "┐", "L": "└", "J": "┘", "|": "│", "-": "─"})
+    loop = loop_positions(text)
+
+    counter, pipe = 0, "|"
+    for y, line in enumerate(parse(text)):
         inside = False
-        apa = {"F": "J", "L": "7"}
-        for x, char in enumerate(line):
-            if Position(y, x) in seen:
-                if char == "|":
+        string = [" "] * len(line)
+        for x, c in enumerate(line):
+            if (y, x) in loop:
+                string[x] = c
+                if c in pipe:
                     inside = not inside
-                elif char in "FL7J":
-                    if buff and apa.get(buff) == char:
-                        inside = not inside
-                        buff = None
-                    else:
-                        buff = char
-                trans = {
-                    "F": "┌",
-                    "7": "┐",
-                    "L": "└",
-                    "J": "┘",
-                    "|": "│",
-                    "-": "─",
-                }
-                print(trans.get(char, char), end="")
+                if c in "FL7J|":
+                    pipe = {"F": "J|", "L": "7|"}.get(c, "|")
             elif inside:
+                string[x] = "*"
                 counter += 1
-                print("*", end="")
-            else:
-                print(" ", end="")
-        print(" ")
+        print("".join(string).translate(to_maze))
     return counter
 
 
