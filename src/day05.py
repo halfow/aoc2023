@@ -89,20 +89,20 @@ def part2(data):
     for page in almanac.values():
         tmp = []
         for current in seeds:
-            remaining = current
+            rem = current
             for p in page:
-                start, stop = remaining.start in p, remaining.stop in p
+                start, stop = rem.start in p, rem.stop in p
                 if start and stop:
-                    tmp.append(Range(remaining.start + p.delta, remaining.stop + p.delta))
+                    tmp.append(Range(rem.start + p.delta, rem.stop + p.delta))
                     break
                 if start:
-                    tmp.append(Range(remaining.start + p.delta, p.stop + p.delta))
-                    remaining = Range(p.stop, remaining.stop)
+                    tmp.append(Range(rem.start + p.delta, p.stop + p.delta))
+                    rem = Range(p.stop, rem.stop)
                 if stop:
-                    tmp.append(Range(remaining.start, p.start))
-                    tmp.append(Range(p.start + p.delta, remaining.stop + p.delta))
+                    tmp.append(Range(rem.start, p.start))
+                    tmp.append(Range(p.start + p.delta, rem.stop + p.delta))
             else:
-                tmp.append(remaining)
+                tmp.append(rem)
         seeds = tmp
     yield from seeds
 

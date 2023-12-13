@@ -20,7 +20,13 @@ def parse(text):
 
 def part1(text: str):
     for time, distance in parse(text):
-        yield sum((x * y) > distance for x, y in zip(range(1, time), range(time - 1, 0, -1)))
+        yield sum(
+            (x * y) > distance
+            for x, y in zip(
+                range(1, time),
+                range(time - 1, 0, -1),
+            )
+        )
 
 
 def part2(text):

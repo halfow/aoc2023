@@ -21,19 +21,23 @@ def parse(text):
 
 def part1(text):
     weight = "AKQJT98765432"[::-1]
-    for hand, bet in parse(text):
-        yield sorted(Counter(hand).values(), reverse=True), tuple(map(weight.find, hand)), int(bet)
+    for draw, bet in parse(text):
+        hand = sorted(Counter(draw).values(), reverse=True)
+        high = tuple(map(weight.find, draw))
+        yield hand, high, int(bet)
 
 
 def part2(text):
     weight = "AKQT98765432J"[::-1]
-    for hand, bet in parse(text):
+    for draw, bet in parse(text):
         try:
-            ((char, _),) = Counter(hand.replace("J", "")).most_common(1)
-            handy = hand.replace("J", char)
+            ((char, _),) = Counter(draw.replace("J", "")).most_common(1)
+            handy = draw.replace("J", char)
         except ValueError:
-            handy = hand
-        yield sorted(Counter(handy).values(), reverse=True), tuple(map(weight.find, hand)), int(bet)
+            handy = draw
+        hand = sorted(Counter(handy).values(), reverse=True)
+        high = tuple(map(weight.find, draw))
+        yield hand, high, int(bet)
 
 
 def calc(part, text):

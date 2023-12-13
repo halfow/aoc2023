@@ -28,12 +28,9 @@ def to_kernel(i, row_length):
 
 
 def party(text, pattern):
-    # NOTE: Part numbers are never adjacent even through row breaks
-    # NOTE: There are no parts/gears at line edges
-    # NOTE: numbers slicing could be used to narrow search space for each iteration, bisect(min/max)
     numbers = tuple((int(m[0]), range(*m.span())) for m in re.finditer(r"\d+", text))
     line = text.find("\n") + 1
-    gears = (set(to_kernel(match.start(), line)) for match in re.finditer(pattern, text))
+    gears = (set(to_kernel(m.start(), line)) for m in re.finditer(pattern, text))
     for gear in gears:
         yield [ratio for ratio, span in numbers if not gear.isdisjoint(span)]
 

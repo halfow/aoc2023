@@ -68,16 +68,25 @@ def parse(text: str) -> Generator[str, None, None]:
     yield from text.splitlines()
 
 
-def start_points(plane: Sequence[str]) -> Generator[tuple[Position, Position], None, None]:
-    start = next(Position(y, line.find("S")) for y, line in enumerate(plane) if "S" in line)
-    points = (
+def start_points(
+    plane: Sequence[str],
+) -> Generator[tuple[Position, Position], None, None]:
+    start = next(Position(y, x.find("S")) for y, x in enumerate(plane) if "S" in x)
+    start_deltas = (
         (Position(0, 1), "-J7"),  # Right
         (Position(0, -1), "-FL"),  # Left
         (Position(-1, 0), "|F7"),  # Up
         (Position(1, 0), "|LJ"),  # Down
     )
-    possible = ((Position(start.y + move.y, start.x + move.x), valid) for move, valid in points)
-    yield from ((start, move) for move, valid in possible if plane[move.y][move.x] in valid)
+    possible_connections = (
+        (Position(start.y + move.y, start.x + move.x), valid)
+        for move, valid in start_deltas
+    )
+    yield from (
+        (start, move)
+        for move, valid in possible_connections
+        if plane[move.y][move.x] in valid
+    )
 
 
 def loop_positions(text) -> set[Position]:
@@ -102,7 +111,7 @@ def part1(text: str) -> int:
 
 
 def part2(text: str) -> int:
-    to_maze = str.maketrans({"F": "┌", "7": "┐", "L": "└", "J": "┘", "|": "│", "-": "─"})
+    maze = str.maketrans({"F": "┌", "7": "┐", "L": "└", "J": "┘", "|": "│", "-": "─"})
     loop = loop_positions(text)
 
     counter, pipe = 0, "|"
@@ -119,7 +128,7 @@ def part2(text: str) -> int:
             elif inside:
                 string[x] = "*"
                 counter += 1
-        print("".join(string).translate(to_maze))
+        print("".join(string).translate(maze))
     return counter
 
 
