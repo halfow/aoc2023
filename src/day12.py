@@ -1,6 +1,5 @@
 from pathlib import Path
-import re
-from itertools import product, pairwise
+from functools import lru_cache
 
 file_name = Path(__file__).with_suffix(".txt").name
 dir_name = Path(__file__).parent.with_name("input")
@@ -18,46 +17,52 @@ example = """
 def parse(text: str):
     for line in text.splitlines():
         springs, pattern = line.split()
-        yield (
-            springs,
-            tuple(map(int, pattern.split(","))),
-        )
+        yield (springs, tuple(map(int, pattern.split(","))))
 
 
-def recurse(spring, sequence):
-    return {
-        s: tuple(
-            (m.start(), m.start() + s)
-            for m in re.finditer(rf"(?=([#?]{{{s}}}))", spring)
-        )
-        for s in set(sequence)
-    }
+@lru_cache(typed=True)
+def walk(row, segments) -> int:
+    # Handle for no more recursion
+    if not row:
+        return int(not segments)
+    elif not segments:
+        return int("#" not in row)
+
+    # Handle for current character
+    match character := row[0]:
+        case ".":  # try next and return
+            return walk(row[1:], segments)
+        case "?":  # possible sequence break
+            result = walk(row[1:], segments)
+        case "#":  # sequence break
+            result = 0
+        case _:
+            raise ValueError(f"Unknown character {character}")
+
+    # Handle for current segment
+    segment = segments[0]  # Current segment length
+    try:
+        if "." in row[:segment]:  # Segment is broken
+            pass
+        elif segment == len(row):  # Segment fits
+            return result + walk(row[segment + 1 :], segments[1:])
+        elif row[segment] != "#":  # Segment is not to long
+            return result + walk(row[segment + 1 :], segments[1:])
+    except IndexError:
+        pass
+    return result
 
 
 def part1(text: str):
-    for spring, sequence in parse(text):
-        possible = recurse(spring, sequence)
-        # TODO: we know some min and max boundaries of the sequence
-        #       this can be used to reduce the search space.
-        #       Further more we can rely on the fact that all "#"
-        #       always have to be covered by the sequence.
-        #       Some can be full cover or false. This will reduce
-        #       the search space even more.
-        #       for a sequence of "#" we can assume that N-1 "#" can
-        #       be reduced and all ranges touching the "#" boundary
-        #       can be removed. eg "##" at 5,7 -> "#" in range 4, 8
-        #       can be removed as candidate solution
-        for c in product(*(possible[s] for s in sequence)):
-            if "#" in spring[: c[0][0]] or "#" in spring[c[-1][1] :]:
-                continue
-            for (_, a), (b, _) in pairwise(c):
-                if a >= b:
-                    break
-                if "#" in spring[a:b]:
-                    break
-            else:
-                yield True
+    return sum(walk(a, b) for a, b in parse(text))
 
 
-print(sum(part1(example)))
-print(sum(part1(validation)))
+def part2(text: str):
+    return sum(walk("?".join((a,) * 5), b * 5) for a, b in parse(text))
+
+
+print(f"{part1(example)=}")
+print(f"{part1(validation)=}")
+
+print(f"{part2(example)=}")
+print(f"{part2(validation)=}")
