@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import Iterable
+from io import StringIO
+
 
 file_name = Path(__file__).with_suffix(".txt").name
 dir_name = Path(__file__).parent.with_name("input")
@@ -28,16 +30,22 @@ def transpose(grid: Iterable[str]) -> tuple[str, ...]:
 
 def fall(column: Iterable[str]) -> str:
     """Simulate falling of the O tiles"""
-    new = []
+    update = StringIO()
     ball = empty = 0
-    for p in column:
-        empty += p == "."
-        ball += p == "O"
-        if p == "#":
-            new.extend(("O" * ball, "." * empty, "#"))
-            ball = empty = 0
-    new.extend(("O" * ball, "." * empty))
-    return "".join(new)
+    for symbol in column:
+        match symbol:
+            case ".":
+                empty += 1
+            case "O":
+                ball += 1
+            case "#":
+                update.write("O" * ball)
+                update.write("." * empty)
+                update.write("#")
+                ball = empty = 0
+    update.write("O" * ball)
+    update.write("." * empty)
+    return update.getvalue()
 
 
 def north(grid: tuple[str, ...]) -> tuple[str, ...]:
